@@ -687,15 +687,25 @@ Java_gnu_java_awt_peer_gtk_CairoGraphics2D_cairoFill
   struct cairographics2d *gr = JLONG_TO_PTR(struct cairographics2d, pointer);
   g_assert (gr != NULL);
 
-  if (alpha == 1.0)
-    cairo_fill (gr->cr);
-  else
-    {
-      cairo_save(gr->cr);
-      cairo_clip(gr->cr);
-      cairo_paint_with_alpha(gr->cr, alpha);
-      cairo_restore(gr->cr);
-    }
+  cairo_operator_t op = cairo_get_operator(gr->cr);
+
+  int is_opaque = alpha == 1;
+  int is_unbounded_operator =
+            op == CAIRO_OPERATOR_IN ||
+            op == CAIRO_OPERATOR_DEST_IN ||
+            op == CAIRO_OPERATOR_OUT ||
+            op == CAIRO_OPERATOR_DEST_ATOP;
+
+  int is_not_unbounded_operator = ! is_unbounded_operator;
+
+  if (is_opaque && is_not_unbounded_operator) {
+    cairo_fill(gr->cr);
+  } else {
+    cairo_save(gr->cr);
+    cairo_clip(gr->cr);
+    cairo_paint_with_alpha(gr->cr, alpha);
+    cairo_restore(gr->cr);
+  }
 }
 
 JNIEXPORT void JNICALL
