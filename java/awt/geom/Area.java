@@ -37,8 +37,11 @@ exception statement from your version. */
 
 package java.awt.geom;
 
+import gnu.java.awt.DebugLogger;
+
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.util.Arrays;
 import java.util.Vector;
 
 
@@ -109,6 +112,8 @@ public class Area implements Shape, Cloneable
    * this is irrelevant.
    */
   private int windingRule;
+
+  DebugLogger log = DebugLogger.getInstance();
 
   /**
    * Constructs an empty Area
@@ -189,8 +194,28 @@ public class Area implements Shape, Cloneable
           }
         while (v != path);
       }
+    log.getLogger().info("Solids");
+    for (Segment se : solids) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
+    log.getLogger().info("Holes");
+    for (Segment se : holes) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
+//    Segment penultimo = segments.get(segments.size()-2);
+//    Segment ultimo = segments.get(segments.size()-1);
+//    segments.add()
+//    segments.remove(ultimo);
+    log.getLogger().info("Segments");
+    for (Segment se : segments) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
 
     Vector<Segment> paths = weilerAtherton(segments);
+    log.getLogger().info("Weiler Path");
+    for (Segment se : paths) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
     deleteRedundantPaths(paths);
   }
 
@@ -373,10 +398,18 @@ public class Area implements Shape, Cloneable
     Area B = (Area) area.clone();
     pathA.addAll(solids);
     pathA.addAll(holes);
+    log.getLogger().info("Intersect PathA");
+    for (Segment se : pathA) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
 
     Vector<Segment> pathB = new Vector<Segment>();
     pathB.addAll(B.solids);
     pathB.addAll(B.holes);
+    log.getLogger().info("Intersect PathB");
+    for (Segment se : pathB) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
 
     // create nodes
     for (int i = 0; i < pathA.size(); i++)
@@ -403,26 +436,40 @@ public class Area implements Shape, Cloneable
         Segment path = v;
         if (! v.isSegmentOutside(area) && v.node == null)
           segments.add(v);
+        log.getLogger().warning(v.toString());
         boolean node = false;
         do
           {
             if ((v.node != null || node))
               {
                 node = (v.node != null);
-                if (! v.isSegmentOutside(area))
+                if (! v.isSegmentOutside(area)) {
                   segments.add(v);
+                  log.getLogger().warning(v.toString() + " is inside area: " + area.toString());
+                }
+                else
+                  log.getLogger().warning(v.toString() + " is outside area: " + area.toString());
               }
             v = v.next;
           }
         while (v != path);
       }
-
+    log.getLogger().info("Intersect Segments PathA");
+    for (Segment se : segments) {
+      log.getLogger().warning(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
+    log.getLogger().info("PathB Size: " + pathB.size());
     for (int i = 0; i < pathB.size(); i++)
       {
         Segment v = pathB.elementAt(i);
         Segment path = v;
-        if (! v.isSegmentOutside(this) && v.node == null)
+        if (! v.isSegmentOutside(this) && v.node == null) {
+          log.getLogger().warning("First Segment: " + v.toString() + " is inside area: " + area.toString());
           segments.add(v);
+        } else {
+          log.getLogger().warning("First Segment: " + v.toString() + " is outside area: " + area.toString());
+        }
+        log.getLogger().warning(v.toString());
         v = v.next;
         boolean node = false;
         do
@@ -430,14 +477,21 @@ public class Area implements Shape, Cloneable
             if ((v.node != null || node))
               {
                 node = (v.node != null);
-                if (! v.isSegmentOutside(this))
+                if (! v.isSegmentOutside(this)) {
                   segments.add(v);
+                  log.getLogger().warning(v.toString() + " is inside area: " + area.toString());
+                }
+                else
+                  log.getLogger().warning(v.toString() + " is outside area: " + area.toString());
               }
             v = v.next;
           }
         while (v != path);
       }
-
+    log.getLogger().info("Intersect Segments PathB");
+    for (Segment se : segments) {
+      log.getLogger().info(se.node + " : (" + se.P1 + ") (" + se.P2 + ")");
+    }
     Vector<Segment> paths = weilerAtherton(segments);
     deleteRedundantPaths(paths);
   }
